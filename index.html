@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏛 TyetaPay Pro v1.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:"Poppins",sans-serif;}
+  body{
+    background:linear-gradient(135deg,#001f3f,#0074D9);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:white;
+  }
+  .overlay{
+    position:absolute;
+    top:0;left:0;width:100%;height:100%;
+    backdrop-filter:blur(10px);
+    background:rgba(0,0,0,0.3);
+  }
+  .app{
+    position:relative;z-index:1;
+    width:100%;max-width:440px;
+    background:rgba(255,255,255,0.08);
+    border-radius:20px;
+    box-shadow:0 0 40px rgba(0,255,255,0.3);
+    overflow:hidden;
+    backdrop-filter:blur(20px);
+  }
+  header{
+    background:rgba(0,0,0,0.3);
+    color:#00bfff;
+    text-align:center;
+    padding:20px 0;
+    font-size:26px;
+    font-weight:700;
+    text-shadow:0 0 10px #00bfff;
+  }
+  main{padding:25px;}
+  .hidden{display:none;}
+  label{font-size:14px;opacity:0.9;}
+  input{
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    border:none;
+    border-radius:8px;
+    background:rgba(255,255,255,0.15);
+    color:white;
+    outline:none;
+  }
+  input::placeholder{color:#ccc;}
+  button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#00bfff;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.3s;
+  }
+  button:hover{background:#0095cc;box-shadow:0 0 10px #00bfff;}
+  .center{text-align:center;}
+  .toggle{
+    position:absolute;
+    top:10px;
+    right:10px;
+    cursor:pointer;
+    background:#00bfff;
+    color:white;
+    padding:5px 10px;
+    border-radius:8px;
+    font-size:12px;
+  }
+  .dark-mode{
+    background:linear-gradient(135deg,#000,#003);
+    color:white;
+  }
+  #notif{
+    position:fixed;
+    top:20px;
+    right:20px;
+    padding:10px 20px;
+    background:#00bfff;
+    color:white;
+    border-radius:8px;
+    display:none;
+    animation:fadeIn 0.5s;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div class="overlay"></div>
+<div id="notif"></div>
+
+<div class="app" id="app">
+  <div class="toggle" onclick="toggleMode()">🌙 Mode</div>
+  <header>🏛 TyetaPay Pro</header>
+
+  <!-- LOGIN -->
+  <main id="login-page">
+    <h2 class="center">Masuk ke TyetaPay</h2><br>
+    <label>Email</label>
+    <input type="email" id="login-email" placeholder="Masukkan email">
+    <label>Password</label>
+    <input type="password" id="login-password" placeholder="Masukkan password">
+    <button onclick="login()">Masuk</button>
+    <p class="center">Belum punya akun? <a href="#" onclick="showRegister()">Daftar</a></p>
+  </main>
+
+  <!-- REGISTER -->
+  <main id="register-page" class="hidden">
+    <h2 class="center">Daftar TyetaPay</h2><br>
+    <label>Nama</label>
+    <input type="text" id="reg-name" placeholder="Masukkan nama">
+    <label>Email</label>
+    <input type="email" id="reg-email" placeholder="Masukkan email">
+    <label>Password</label>
+    <input type="password" id="reg-password" placeholder="Masukkan password">
+    <label>Buat PIN (4 digit)</label>
+    <input type="number" id="reg-pin" placeholder="1234">
+    <button onclick="register()">Daftar</button>
+    <p class="center"><a href="#" onclick="showLogin()">Sudah punya akun? Masuk</a></p>
+  </main>
+
+<!-- DASHBOARD USER -->
+  <main id="dashboard-page" class="hidden">
+    <h2 class="center" id="user-name"></h2>
+    <p class="center">Saldo kamu:</p>
+    <p class="center balance" id="user-balance">Rp 0</p>
+
+    <div class="actions center">
+      <button onclick="topup()">💰 Isi Saldo</button>
+      <button onclick="withdraw()">🏦 Tarik Saldo</button>
+      <button onclick="transfer()">💸 Transfer</button>
+    </div><br>
+
+    <button onclick="showStats()">📊 Statistik</button>
+    <button onclick="logout()">🚪 Keluar</button>
+
+    <h3>📜 Riwayat Transaksi</h3>
+    <div id="transaction-list"></div><br>
+
+    <button onclick="chatWA()">💬 Hubungi Admin</button>
+  </main>
+
+  <!-- STATISTIK -->
+  <main id="stats-page" class="hidden">
+    <h2 class="center">📊 Statistik Transaksi</h2>
+    <canvas id="chart"></canvas><br>
+    <button onclick="showDashboard()">⬅️ Kembali</button>
+  </main>
+
+  <!-- DASHBOARD ADMIN -->
+  <main id="admin-page" class="hidden">
+    <h2 class="center">👑 Panel Admin TyetaPay</h2>
+    <p class="center">Email Admin: <b id="admin-email"></b></p><br>
+    <div id="admin-stats"></div>
+    <div id="user-list"></div>
+    <button onclick="logout()">🚪 Logout</button>
+  </main>
+</div>
+
+<script>
+const ADMIN_EMAIL = "tyetaadmin@tyetapay.com";
+const ADMIN_PASS = "radit";
+const users = JSON.parse(localStorage.getItem('tyetapay_users')||'{}');
+let currentUser = JSON.parse(localStorage.getItem('tyetapay_current')||'null');
+let dark=false;
+
+function toggleMode(){
+  dark=!dark;
+  document.body.classList.toggle('dark-mode',dark);
+}
+
+function hideAll(){
+  ['login-page','register-page','dashboard-page','admin-page','stats-page'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+}
+
+function showLogin(){hideAll();document.getElementById('login-page').classList.remove('hidden');}
+function showRegister(){hideAll();document.getElementById('register-page').classList.remove('hidden');}
+function showDashboard(){hideAll();document.getElementById('dashboard-page').classList.remove('hidden');loadDashboard();}
+function showAdmin(){hideAll();document.getElementById('admin-page').classList.remove('hidden');loadAdmin();}
+function showStats(){hideAll();document.getElementById('stats-page').classList.remove('hidden');loadChart();}
+
+function notify(msg){
+  const n=document.getElementById('notif');
+  n.innerText=msg;
+  n.style.display='block';
+  setTimeout(()=>n.style.display='none',2500);
+}
+
+function save(){
+  localStorage.setItem('tyetapay_users',JSON.stringify(users));
+  localStorage.setItem('tyetapay_current',JSON.stringify(currentUser));
+}
+
+function register(){
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-password').value.trim();
+  const pin=document.getElementById('reg-pin').value.trim();
+  if(!name||!email||!pass||pin.length!==4)return alert('Isi semua kolom dengan benar!');
+  if(users[email])return alert('Email sudah terdaftar!');
+  users[email]={name,email,pass,pin,balance:0,bonus:false,history:[]};
+  save();
+  alert('Pendaftaran berhasil!');
+  showLogin();
+}
+
+function login(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-password').value.trim();
+
+  if(email===ADMIN_EMAIL && pass===ADMIN_PASS){
+    currentUser={email:ADMIN_EMAIL,role:'admin'};
+    localStorage.setItem('tyetapay_current',JSON.stringify(currentUser));
+    showAdmin();
+    return;
+  }
+
+  if(!users[email])return alert('Akun tidak ditemukan!');
+  if(users[email].pass!==pass)return alert('Password salah!');
+  currentUser=users[email];
+  save();
+  showDashboard();
+}
+
+function logout(){
+  localStorage.removeItem('tyetapay_current');
+  currentUser=null;
+  showLogin();
+}
+
+function loadDashboard(){
+  document.getElementById('user-name').innerText='Halo, '+currentUser.name;
+  document.getElementById('user-balance').innerText='Rp '+currentUser.balance.toLocaleString();
+  const list=document.getElementById('transaction-list');
+  list.innerHTML=currentUser.history.map(h=>`<div class='transaction'>${h}</div>`).join('');
+}
+
+function topup(){
+  let a=parseInt(prompt('Masukkan jumlah top up (Rp)'));
+  if(isNaN(a)||a<=0)return alert('Jumlah tidak valid!');
+  if(!currentUser.bonus){a+=10000;notify('Bonus Rp10.000 top-up pertama!');currentUser.bonus=true;}
+  currentUser.balance+=a;
+  currentUser.history.unshift(`+ Rp${a.toLocaleString()} (Top Up)`);
+  save();loadDashboard();notify('Top up berhasil!');
+}
+
+function withdraw(){
+  const pin=prompt('Masukkan PIN');if(pin!==currentUser.pin)return alert('PIN salah!');
+  let a=parseInt(prompt('Jumlah tarik saldo (Rp)'));
+  if(isNaN(a)||a<=0||a>currentUser.balance)return alert('Jumlah tidak valid!');
+  currentUser.balance-=a;
+  currentUser.history.unshift(`- Rp${a.toLocaleString()} (Withdraw)`);
+  save();loadDashboard();notify('Penarikan berhasil!');
+}
+
+function transfer(){
+  const to=prompt('Masukkan email tujuan');
+  if(!users[to])return alert('Tujuan tidak ditemukan!');
+  const pin=prompt('Masukkan PIN');if(pin!==currentUser.pin)return alert('PIN salah!');
+  const amt=parseInt(prompt('Jumlah transfer (Rp)'));
+  if(isNaN(amt)||amt<=0||amt>currentUser.balance)return alert('Jumlah tidak valid!');
+  currentUser.balance-=amt;users[to].balance+=amt;
+  currentUser.history.unshift(`- Rp${amt.toLocaleString()} ke ${to}`);
+  users[to].history.unshift(`+ Rp${amt.toLocaleString()} dari ${currentUser.email}`);
+  save();loadDashboard();notify('Transfer berhasil!');
+}
+
+function chatWA(){
+  window.open('https://wa.me/6289603266259?text=Halo%20Admin%20TyetaPay%2C%20saya%20butuh%20bantuan.','_blank');
+}
+
+function loadAdmin(){
+  document.body.style.background="linear-gradient(135deg,#000000,#222222)";
+  document.getElementById('admin-email').innerText=currentUser.email;
+
+  // Hitung total saldo semua user
+  let totalSaldo=0;
+  for(const u in users){ totalSaldo+=users[u].balance; }
+
+  document.getElementById('admin-stats').innerHTML=`
+    <div class='transaction'>
+      <b>Total Pengguna:</b> ${Object.keys(users).length}<br>
+      <b>Total Saldo Semua User:</b> Rp ${totalSaldo.toLocaleString()}
+    </div><br>
+  `;
+
+  let html='';
+  for(const email in users){
+    const u=users[email];
+    html+=`
+      <div class='transaction'>
+        <b>${u.name}</b> (${u.email})<br>
+        Saldo: Rp ${u.balance.toLocaleString()}<br>
+        <button onclick="editSaldo('${email}')">✏️ Edit Saldo</button>
+        <button onclick="hapusUser('${email}')">🗑️ Hapus</button>
+      </div>
+    `;
+  }
+  document.getElementById('user-list').innerHTML=html;
+}
+
+function editSaldo(email){
+  const amt=parseInt(prompt('Masukkan saldo baru (Rp)'));
+  if(isNaN(amt)||amt<0)return alert('Nominal tidak valid!');
+  users[email].balance=amt;
+  save();loadAdmin();notify('Saldo diperbarui!');
+}
+
+function hapusUser(email){
+  if(confirm('Yakin ingin menghapus akun '+email+'?')){
+    delete users[email];
+    save();loadAdmin();notify('Akun dihapus!');
+  }
+}
+
+function loadChart(){
+  const ctx=document.getElementById('chart').getContext('2d');
+  const masuk=currentUser.history.filter(h=>h.startsWith('+')).length;
+  const keluar=currentUser.history.filter(h=>h.startsWith('-')).length;
+  new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Pemasukan','Pengeluaran'],
+      datasets:[{
+        data:[masuk,keluar],
+        backgroundColor:['#00bfff','#ff5555']
+      }]
+    },
+    options:{plugins:{legend:{labels:{color:'#fff'}}}}
+  });
+}
+
+function exportHistory(){
+  const content=currentUser.history.join('\\n');
+  const blob=new Blob([content],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='Riwayat_TyetaPay.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('Riwayat diekspor!');
+}
+
+if(currentUser){
+  if(currentUser.email===ADMIN_EMAIL) showAdmin();
+  else showDashboard();
+}else{
+  showLogin();
+}
+</script>
+</body>
+</html>
